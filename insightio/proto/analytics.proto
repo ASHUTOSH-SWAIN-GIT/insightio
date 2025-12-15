@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package analytics;
+
+option go_package = "github.com/ASHUTOSH-SWAIN-GIT/insightio/proto";
+
+import "google/protobuf/timestamp.proto";
+
+// Represents an event sent by a client to the ingest service.
+message Event {
+  string id = 1;
+  string type = 2;                      // type of event such as login
+  google.protobuf.Timestamp timestamp = 3; // when event occurred
+  string user_id = 4;                   // user identifier
+  map<string, string> metadata = 5;     // custom key value data
+  double value = 6;                     // optional numeric value
+}
+
+// Acknowledgement returned by RPCs.
+message Ack {
+  bool ok = 1;
+  string message = 2;
+}
+
+// Describes what metrics the client wants.
+message GetMetricsRequest {
+  repeated string metrics_names = 1; // metrics to fetch, empty means all
+  int32 window_seconds = 2;          // time window in seconds
+}
+
+// A single metric datapoint returned by metrics service.
+message Metric {
+  string name = 1;                         // metric name
+  double value = 2;                        // metric value
+  google.protobuf.Timestamp timestamp = 3; // when metric was calculated
+}
+
+// Multiple metrics in one response.
+message MetricResponse {
+  repeated Metric metrics = 1;
+}
+
+// Service for ingesting events.
+service IngestService {
+  rpc SendEvent(Event) returns (Ack);                    // send one event
+  rpc SendEventStream(stream Event) returns (Ack);       // send event stream
+}
+
+// Service for fetching metrics.
+service MetricsService {
+  rpc GetMetrics(GetMetricsRequest) returns (MetricResponse);
+  rpc SubscribeMetrics(GetMetricsRequest) returns (stream Metric);
+}
+
